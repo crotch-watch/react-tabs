@@ -1,12 +1,19 @@
-import type { TabStore, ActiveTabId, Mode, TabState } from "./Tab.types"
+import type { TabStore, Mode, TabState, ViewState } from "./Tab.types"
 
-const DEFAULT_TAB_STORE: TabStore = []
-const DEFAULT_ACTIVE_TAB_ID: ActiveTabId = Infinity
-const DEFAULT_MODE: Mode = "idle"
+export const DEFAULT_TAB_STORE: TabStore = []
+Object.freeze(DEFAULT_TAB_STORE)
+
+export const DEFAULT_VIEW_STATE: ViewState = {
+  activeTabId: "",
+  draggingTabId: "",
+} as const
+Object.freeze(DEFAULT_VIEW_STATE)
+
+export const DEFAULT_MODE: Mode = "idle"
 
 export const DEFAULT_TAB_STATE: TabState = {
   data: DEFAULT_TAB_STORE,
-  view: DEFAULT_ACTIVE_TAB_ID,
+  view: DEFAULT_VIEW_STATE,
   mode: DEFAULT_MODE,
 }
 
