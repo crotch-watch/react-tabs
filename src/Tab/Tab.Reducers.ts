@@ -1,11 +1,11 @@
-import { DEFAULT_TAB_STATE } from "./Tab.constants"
+import { DEFAULT_TAB_STATE, DEFAULT_VIEW_STATE } from "./Tab.constants"
 import type { TabActions, TabState } from "./Tab.types"
 
 export const tabStoreReducer = (
   state: TabState,
   action: TabActions
 ): TabState => {
-  const { data, mode } = state
+  const { data, mode, view } = state
 
   switch (action.type) {
     case "ENTRY_REQUEST": {
@@ -26,7 +26,7 @@ export const tabStoreReducer = (
       return {
         ...state,
         data: [...data, action.payload],
-        view: action.payload.uid,
+        view: { ...view, activeTabId: action.payload.uid },
       }
     }
 
@@ -36,7 +36,7 @@ export const tabStoreReducer = (
       const uidPresent = data.some((tab) => tab.uid === action.payload)
       if (!uidPresent) return state
 
-      return { ...state, view: action.payload }
+      return { ...state, view: { ...view, activeTabId: action.payload } }
     }
 
     // can delete in user_input
@@ -53,11 +53,16 @@ export const tabStoreReducer = (
       const newTabs = data.filter((tab) => tab.uid !== idElementRemove)
 
       // if deleted tab isn't currently active tab
-      if (idElementRemove !== state.view) return { ...state, data: newTabs }
+      if (idElementRemove !== state.view.activeTabId)
+        return { ...state, data: newTabs }
 
       // if no tabs left
       if (newTabs.length === 0)
-        return { ...state, data: newTabs, view: Infinity }
+        return {
+          ...state,
+          data: newTabs,
+          view: { ...view, activeTabId: DEFAULT_VIEW_STATE.activeTabId },
+        }
 
       const previousElementIndex = indexToDelete - 1
 
@@ -68,7 +73,31 @@ export const tabStoreReducer = (
       return {
         ...state,
         data: newTabs,
-        view: newActiveTabId,
+        view: { ...view, activeTabId: newActiveTabId },
+      }
+    }
+    case "DRAGGING_ELEMENT": {
+      if (mode === "dragging") return state
+
+      const exists = data.some((tab) => tab.uid === action.payload)
+      if (!exists) return state
+
+      return {
+        ...state,
+        mode: "dragging",
+        view: { ...view, draggingTabId: action.payload },
+      }
+    }
+
+    case "ENDING_DRAG": {
+      if (mode === "idle") return state
+      const exists = data.some((tab) => tab.uid === action.payload)
+      if (!exists) return state
+
+      return {
+        ...state,
+        mode: "idle",
+        view: { ...view, draggingTabId: DEFAULT_VIEW_STATE.draggingTabId },
       }
     }
 
