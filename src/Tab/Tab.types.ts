@@ -1,5 +1,5 @@
 export type Tab = {
-  uid: number
+  uid: string
   name: string
   data: string
 }
@@ -7,12 +7,17 @@ export type Tab = {
 export type TabStore = Array<Tab>
 
 export type ActiveTabId = Tab["uid"]
+export type DraggingTabId = Tab["uid"]
+export type ViewState = {
+  activeTabId: ActiveTabId
+  draggingTabId: DraggingTabId
+}
 
 export type Mode = "idle" | "dragging" | "user_input"
 
 export type TabState = {
   data: TabStore
-  view: ActiveTabId
+  view: ViewState
   mode: Mode
 }
 
@@ -30,5 +35,13 @@ export type TabActions =
     }
   | {
       type: "DELETE_TAB"
+      payload: Tab["uid"]
+    }
+  | {
+      type: "DRAGGING_ELEMENT"
+      payload: Tab["uid"]
+    }
+  | {
+      type: "ENDING_DRAG"
       payload: Tab["uid"]
     }
