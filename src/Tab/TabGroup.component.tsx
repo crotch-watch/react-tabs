@@ -1,34 +1,124 @@
 import { useRef } from "react"
 import { TabC } from "./Tab.component"
-import { useTabs } from "./Tab.hooks"
-import type { Tab } from "./Tab.types"
+import { useDragDropEffects, useTabs } from "./Tab.hooks"
 
 export const TabGroup = () => {
-  const { state, enterData, requestDataEntry, changeActiveTab, deleteTab } =
-    useTabs()
+  const {
+    state: {
+      data,
+      view: { activeTabId, draggingTabId },
+      mode,
+    },
+    enterData,
+    requestDataEntry,
+    changeActiveTab,
+    deleteTab,
+    drag,
+    end,
+  } = useTabs()
+
+  useDragDropEffects(draggingTabId, mode)
 
   const nameRef = useRef<HTMLInputElement | null>(null)
   const dataRef = useRef<HTMLInputElement | null>(null)
 
-  const createTab = (tab: Tab) => {
+  const handleFormSubmit = (formEvent: React.FormEvent<HTMLFormElement>) => {
+    formEvent.preventDefault()
+
     if (!nameRef.current || !dataRef.current) return
     if (!nameRef.current.value.trim().length) return
 
-    enterData(tab)
+    enterData({
+      uid: Math.random().toString(),
+      name: nameRef.current.value.trim(),
+      data: dataRef.current.value.trim(),
+    })
+
     nameRef.current.value = dataRef.current.value = ""
   }
 
-  const activeTabData = state.data.find((tab) => tab.uid === state.view)?.data
+  const activeTabData = data.find((tab) => tab.uid === activeTabId)?.data
 
-  const Tabs = state.data.length
-    ? state.data.map((tab) => (
-        <div key={tab.uid}>
+  const Tabs = data.length
+    ? data.map((tab) => (
+        <div
+          key={tab.uid}
+          id={tab.uid}
+          draggable={true}
+          onDragStart={() => drag(tab.uid)}
+          onDragEnd={({ clientX, clientY }) => {
+            const droppable = document.getElementById("droppable")
+
+            if (!droppable) return
+            const dropped = document.elementFromPoint(clientX, clientY)
+
+            if (!dropped) return
+
+            if (droppable.contains(dropped)) {
+              // equivalent to on onDrop
+
+              function calc2d({
+                x1,
+                x2,
+                y1,
+                y2,
+              }: {
+                x1: number
+                x2: number
+                y1: number
+                y2: number
+              }) {
+                const greaterX = x2 - x1 > 0 ? x2 : x1
+                const greaterY = y2 - y1 > 0 ? y2 : y1
+
+                return Math.pow(
+                  Math.pow(greaterX - (greaterX === x2 ? x1 : x2), 2) +
+                    Math.pow(greaterY - (greaterY === y2 ? y1 : y2), 2),
+                  0.5
+                )
+              }
+
+              function calcBoxCenter(box: DOMRect) {
+                return {
+                  x: box.width / 2 + box.left,
+                  y: box.height / 2 + box.top,
+                }
+              }
+
+              let closetDroppable: Element
+              let min: number = Infinity
+
+              const droppables = [...droppable.children]
+              droppables.forEach((droppable) => {
+                const droppableCoords = droppable.getBoundingClientRect()
+                const droppableCenter = calcBoxCenter(droppableCoords)
+                const distance = calc2d({
+                  x2: clientX,
+                  x1: droppableCenter.x,
+                  y2: clientY,
+                  y1: droppableCenter.y,
+                })
+
+                if (distance > min) return
+
+                min = distance
+                closetDroppable = droppable
+              })
+
+              return
+            }
+
+            end(tab.uid)
+          }}
+        >
           <TabC
-            id={tab.uid}
             name={tab.name}
-            onClose={() => deleteTab(tab.uid)}
+            onClose={() => {
+              deleteTab(tab.uid)
+            }}
+            onDragStart={() => drag(tab.uid)}
+            onDragEnd={() => end(tab.uid)}
             handleTabClick={() => changeActiveTab(tab.uid)}
-            onDragStart={console.log}
           />
         </div>
       ))
@@ -36,23 +126,17 @@ export const TabGroup = () => {
 
   return (
     <section>
-      {Tabs}
+      <div
+        id="droppable"
+        style={{ display: "flex", gap: "1rem" }}
+        onDragOver={(e) => e.preventDefault()}
+      >
+        {Tabs}
+      </div>
 
       <section>
-        {state.mode === "user_input" ? (
-          <form
-            onSubmit={(formEvent) => {
-              formEvent.preventDefault()
-
-              if (!nameRef.current || !dataRef.current) return
-
-              createTab({
-                uid: Math.random(),
-                name: nameRef.current.value.trim(),
-                data: dataRef.current.value.trim(),
-              })
-            }}
-          >
+        {mode === "user_input" ? (
+          <form onSubmit={handleFormSubmit}>
             <label htmlFor="input--create-tab">
               name
               <input
