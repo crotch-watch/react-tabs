@@ -1,17 +1,13 @@
-export const TabC = ({ id, name, onClose, handleTabClick, ...props }) => {
+export const TabC = ({ name, onClose, handleTabClick }) => {
   return (
     <header
-      key={id}
       onClick={() => {
-        console.log("click")
         handleTabClick()
       }}
-      draggable={true}
     >
       {name}
       <span
         onClick={() => {
-          console.log("close")
           onClose()
         }}
       >
