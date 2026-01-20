@@ -3,7 +3,7 @@ import type { TabActions, TabState } from "./Tab.types"
 
 export const tabStoreReducer = (
   state: TabState,
-  action: TabActions
+  action: TabActions,
 ): TabState => {
   const { data, mode, view } = state
 
@@ -91,6 +91,7 @@ export const tabStoreReducer = (
 
     case "ENDING_DRAG": {
       if (mode === "idle") return state
+
       const exists = data.some((tab) => tab.uid === action.payload)
       if (!exists) return state
 
@@ -98,6 +99,30 @@ export const tabStoreReducer = (
         ...state,
         mode: "idle",
         view: { ...view, draggingTabId: DEFAULT_VIEW_STATE.draggingTabId },
+      }
+    }
+
+    case "DROPPED": {
+      if (mode !== "dragging") return state
+
+      const { index: droppedAtIndex, uid } = action.payload
+
+      if (uid !== view.draggingTabId) return state
+
+      const invalid = data[droppedAtIndex] === undefined
+      if (invalid) return state
+
+      const currentIndex = data.findIndex((tab) => tab.uid === uid)
+      if (currentIndex < 0) return state
+
+      const newTabs = [...data]
+      const [addTabToDroppedIndex] = newTabs.splice(currentIndex, 1)
+      newTabs.splice(droppedAtIndex, 0, addTabToDroppedIndex)
+
+      return {
+        data: newTabs,
+        view: { ...view, draggingTabId: DEFAULT_VIEW_STATE.draggingTabId },
+        mode: "idle",
       }
     }
 
