@@ -1,7 +1,7 @@
-import { useEffect, useReducer, useRef } from "react"
+import { useReducer } from "react"
 import { tabStoreReducer } from "./Tab.Reducers"
 import { DEFAULT_TAB_STATE } from "./Tab.constants.ts"
-import type { Mode, Tab } from "./Tab.types.ts"
+import type { Tab } from "./Tab.types.ts"
 
 export const useTabs = () => {
   const [state, dispatch] = useReducer(tabStoreReducer, DEFAULT_TAB_STATE)
@@ -30,6 +30,10 @@ export const useTabs = () => {
     dispatch({ type: "ENDING_DRAG", payload: uid })
   }
 
+  const drop = (payload: { index: number; uid: Tab["uid"] }) => {
+    dispatch({ type: "DROPPED", payload })
+  }
+
   return {
     state,
     requestDataEntry,
@@ -38,32 +42,6 @@ export const useTabs = () => {
     deleteTab,
     drag,
     end,
+    drop,
   }
-}
-
-export const useDragDropEffects = (elementId: string, mode: Mode) => {
-  const child = useRef<HTMLElement | null>(null)
-
-  useEffect(() => {
-    switch (mode) {
-      case "dragging": {
-        child.current = document.getElementById(elementId)
-
-        break
-      }
-
-      case "idle": {
-        if (child.current === null) return
-        if (child.current.parentElement === null) return
-
-        child.current.parentElement.appendChild(child.current)
-
-        break
-      }
-    }
-
-    return () => {
-      child.current = null
-    }
-  }, [mode])
 }
