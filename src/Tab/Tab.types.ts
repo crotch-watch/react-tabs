@@ -45,3 +45,7 @@ export type TabActions =
       type: "ENDING_DRAG"
       payload: Tab["uid"]
     }
+  | {
+      type: "DROPPED"
+      payload: { index: number; uid: Tab["uid"] }
+    }
