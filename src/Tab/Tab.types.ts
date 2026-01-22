@@ -49,3 +49,5 @@ export type TabActions =
       type: "DROPPED"
       payload: { index: number; uid: Tab["uid"] }
     }
+
+export type Coords = { x: number; y: number }
